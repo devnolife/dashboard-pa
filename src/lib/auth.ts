@@ -1,7 +1,8 @@
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { MOCK_USERS } from '@/lib/mock-data';
+
+const allUsers = Object.values(MOCK_USERS);
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -16,20 +17,14 @@ export const authOptions: AuthOptions = {
           throw new Error('Email dan password harus diisi');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const user = allUsers.find((u) => u.email === credentials.email);
 
         if (!user) {
           throw new Error('Email atau password salah');
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password,
-        );
-
-        if (!isValid) {
+        // Mock: plain text comparison (no bcrypt/database needed)
+        if (credentials.password !== user.password) {
           throw new Error('Email atau password salah');
         }
 
@@ -37,6 +32,7 @@ export const authOptions: AuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
+          image: user.image,
           role: user.role,
           nim: user.nim,
           nip: user.nip,
@@ -49,8 +45,9 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as { role: string }).role;
-        token.nim = (user as { nim?: string }).nim;
-        token.nip = (user as { nip?: string }).nip;
+        token.nim = (user as { nim?: string | null }).nim ?? undefined;
+        token.nip = (user as { nip?: string | null }).nip ?? undefined;
+        token.picture = user.image;
       }
       return token;
     },
@@ -60,6 +57,7 @@ export const authOptions: AuthOptions = {
         session.user.role = token.role as string;
         session.user.nim = token.nim as string | undefined;
         session.user.nip = token.nip as string | undefined;
+        session.user.image = token.picture as string | undefined;
       }
       return session;
     },
@@ -70,5 +68,5 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: 'jwt',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-bimbingan-pa',
 };

@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 
 interface MahasiswaItem {
@@ -24,6 +24,7 @@ interface MahasiswaItem {
   name: string;
   nim: string | null;
   email: string;
+  image?: string | null;
   totalBimbingan: number;
   menunggu: number;
   disetujui: number;
@@ -110,6 +111,7 @@ export default function MahasiswaPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
+                              <AvatarImage src={m.image || undefined} alt={m.name} className="object-cover" />
                               <AvatarFallback className="text-xs">
                                 {initials}
                               </AvatarFallback>

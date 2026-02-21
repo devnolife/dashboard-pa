@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TambahBimbinganDialog } from "@/components/dashboard/tambah-bimbingan-dialog";
 import { ReviewBimbinganDialog } from "@/components/dashboard/review-bimbingan-dialog";
@@ -30,8 +31,8 @@ interface BimbinganItem {
   catatan: string | null;
   tanggal: string;
   createdAt: string;
-  mahasiswa?: { id: string; name: string; nim: string | null; email: string };
-  dosen?: { id: string; name: string; nip: string | null; email: string };
+  mahasiswa?: { id: string; name: string; nim: string | null; email: string; image?: string | null };
+  dosen?: { id: string; name: string; nip: string | null; email: string; image?: string | null };
 }
 
 const statusVariant: Record<
@@ -164,18 +165,36 @@ export default function BimbinganPage() {
                       </TableCell>
                       {role === "DOSEN" && (
                         <TableCell>
-                          <div>
-                            <p className="font-medium">
-                              {item.mahasiswa?.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {item.mahasiswa?.nim}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={item.mahasiswa?.image || undefined} alt={item.mahasiswa?.name} className="object-cover" />
+                              <AvatarFallback className="text-xs">
+                                {item.mahasiswa?.name?.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || 'M'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {item.mahasiswa?.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.mahasiswa?.nim}
+                              </p>
+                            </div>
                           </div>
                         </TableCell>
                       )}
                       {role === "MAHASISWA" && (
-                        <TableCell>{item.dosen?.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={item.dosen?.image || undefined} alt={item.dosen?.name} className="object-cover" />
+                              <AvatarFallback className="text-xs">
+                                {item.dosen?.name?.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || 'D'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium text-sm">{item.dosen?.name}</span>
+                          </div>
+                        </TableCell>
                       )}
                       <TableCell>
                         {new Date(item.tanggal).toLocaleDateString("id-ID", {

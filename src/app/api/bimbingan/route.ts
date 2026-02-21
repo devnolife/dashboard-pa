@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { MOCK_BIMBINGAN, MOCK_USERS } from '@/lib/mock-data';
 
 // GET /api/bimbingan - List bimbingan
 export async function GET() {
@@ -16,27 +16,15 @@ export async function GET() {
     let bimbingan;
 
     if (role === 'DOSEN') {
-      // Dosen melihat semua bimbingan mahasiswa-nya
-      bimbingan = await prisma.bimbingan.findMany({
-        where: { dosenId: id },
-        include: {
-          mahasiswa: {
-            select: { id: true, name: true, nim: true, email: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      bimbingan = MOCK_BIMBINGAN.filter((b) => b.dosenId === id).sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     } else {
-      // Mahasiswa melihat bimbingan sendiri
-      bimbingan = await prisma.bimbingan.findMany({
-        where: { mahasiswaId: id },
-        include: {
-          dosen: {
-            select: { id: true, name: true, nip: true, email: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      bimbingan = MOCK_BIMBINGAN.filter((b) => b.mahasiswaId === id).sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     }
 
     return NextResponse.json(bimbingan);
@@ -74,35 +62,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cari dosen PA dari mahasiswa
-    const mahasiswa = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { dosenPaId: true },
-    });
+    const dosen = MOCK_USERS.dosen;
 
-    if (!mahasiswa?.dosenPaId) {
-      return NextResponse.json(
-        { error: 'Anda belum memiliki dosen PA' },
-        { status: 400 },
-      );
-    }
-
-    const bimbingan = await prisma.bimbingan.create({
-      data: {
-        judul,
-        deskripsi,
-        tanggal: tanggal ? new Date(tanggal) : new Date(),
-        mahasiswaId: session.user.id,
-        dosenId: mahasiswa.dosenPaId,
+    const newBimbingan = {
+      id: `bimb-${Date.now()}`,
+      judul,
+      deskripsi,
+      status: 'MENUNGGU',
+      catatan: null,
+      tanggal: tanggal ? new Date(tanggal).toISOString() : new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      mahasiswaId: session.user.id,
+      dosenId: dosen.id,
+      mahasiswa: {
+        id: session.user.id,
+        name: session.user.name ?? '',
+        nim: session.user.nim ?? '',
+        email: session.user.email ?? '',
+        image: session.user.image ?? '',
       },
-      include: {
-        dosen: {
-          select: { id: true, name: true, nip: true, email: true },
-        },
+      dosen: {
+        id: dosen.id,
+        name: dosen.name,
+        nip: dosen.nip,
+        email: dosen.email,
+        image: dosen.image,
       },
-    });
+    };
 
-    return NextResponse.json(bimbingan, { status: 201 });
+    // Add to mock data (in-memory only, resets on restart)
+    MOCK_BIMBINGAN.push(newBimbingan);
+
+    return NextResponse.json(newBimbingan, { status: 201 });
   } catch (error) {
     console.error('Error creating bimbingan:', error);
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { MOCK_BIMBINGAN } from '@/lib/mock-data';
 
 // PATCH /api/bimbingan/[id] - Update status bimbingan (dosen) atau edit bimbingan (mahasiswa)
 export async function PATCH(
@@ -17,40 +17,30 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // Cek bimbingan exists
-    const existing = await prisma.bimbingan.findUnique({
-      where: { id },
-    });
+    const index = MOCK_BIMBINGAN.findIndex((b) => b.id === id);
 
-    if (!existing) {
+    if (index === -1) {
       return NextResponse.json(
         { error: 'Bimbingan tidak ditemukan' },
         { status: 404 },
       );
     }
 
+    const existing = MOCK_BIMBINGAN[index];
+
     if (session.user.role === 'DOSEN') {
-      // Dosen hanya bisa update status dan catatan
       if (existing.dosenId !== session.user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      const bimbingan = await prisma.bimbingan.update({
-        where: { id },
-        data: {
-          status: body.status,
-          catatan: body.catatan,
-        },
-        include: {
-          mahasiswa: {
-            select: { id: true, name: true, nim: true, email: true },
-          },
-        },
-      });
+      MOCK_BIMBINGAN[index] = {
+        ...existing,
+        status: body.status ?? existing.status,
+        catatan: body.catatan ?? existing.catatan,
+      };
 
-      return NextResponse.json(bimbingan);
+      return NextResponse.json(MOCK_BIMBINGAN[index]);
     } else {
-      // Mahasiswa hanya bisa edit bimbingan yang MENUNGGU
       if (existing.mahasiswaId !== session.user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
@@ -62,21 +52,16 @@ export async function PATCH(
         );
       }
 
-      const bimbingan = await prisma.bimbingan.update({
-        where: { id },
-        data: {
-          judul: body.judul,
-          deskripsi: body.deskripsi,
-          tanggal: body.tanggal ? new Date(body.tanggal) : undefined,
-        },
-        include: {
-          dosen: {
-            select: { id: true, name: true, nip: true, email: true },
-          },
-        },
-      });
+      MOCK_BIMBINGAN[index] = {
+        ...existing,
+        judul: body.judul ?? existing.judul,
+        deskripsi: body.deskripsi ?? existing.deskripsi,
+        tanggal: body.tanggal
+          ? new Date(body.tanggal).toISOString()
+          : existing.tanggal,
+      };
 
-      return NextResponse.json(bimbingan);
+      return NextResponse.json(MOCK_BIMBINGAN[index]);
     }
   } catch (error) {
     console.error('Error updating bimbingan:', error);
@@ -100,16 +85,16 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const existing = await prisma.bimbingan.findUnique({
-      where: { id },
-    });
+    const index = MOCK_BIMBINGAN.findIndex((b) => b.id === id);
 
-    if (!existing) {
+    if (index === -1) {
       return NextResponse.json(
         { error: 'Bimbingan tidak ditemukan' },
         { status: 404 },
       );
     }
+
+    const existing = MOCK_BIMBINGAN[index];
 
     if (existing.mahasiswaId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -122,7 +107,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.bimbingan.delete({ where: { id } });
+    MOCK_BIMBINGAN.splice(index, 1);
 
     return NextResponse.json({ message: 'Bimbingan berhasil dihapus' });
   } catch (error) {

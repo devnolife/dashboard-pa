@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 
 interface BimbinganItem {
@@ -26,7 +27,7 @@ interface BimbinganItem {
   status: string;
   catatan: string | null;
   tanggal: string;
-  mahasiswa?: { name: string; nim: string | null };
+  mahasiswa?: { name: string; nim: string | null; image?: string | null };
 }
 
 interface ReviewBimbinganDialogProps {
@@ -91,31 +92,43 @@ export function ReviewBimbinganDialog({
         <DialogHeader>
           <DialogTitle>Review Bimbingan</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Mahasiswa</p>
-            <p className="font-medium">
-              {bimbingan.mahasiswa?.name} ({bimbingan.mahasiswa?.nim})
-            </p>
+        <div className="space-y-4 mb-4">
+          <div className="flex items-center gap-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100/50">
+            <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+              <AvatarImage src={bimbingan.mahasiswa?.image || undefined} alt={bimbingan.mahasiswa?.name} className="object-cover" />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-medium text-sm">
+                {bimbingan.mahasiswa?.name?.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || 'M'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-slate-800">
+                {bimbingan.mahasiswa?.name}
+              </p>
+              <p className="text-sm text-blue-600 font-medium">
+                {bimbingan.mahasiswa?.nim}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Judul</p>
-            <p className="font-medium">{bimbingan.judul}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Deskripsi</p>
-            <p className="text-sm">{bimbingan.deskripsi}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Tanggal</p>
-            <p className="text-sm">
-              {new Date(bimbingan.tanggal).toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Judul</p>
+              <p className="font-medium">{bimbingan.judul}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Deskripsi</p>
+              <p className="text-sm">{bimbingan.deskripsi}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Tanggal</p>
+              <p className="text-sm">
+                {new Date(bimbingan.tanggal).toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
